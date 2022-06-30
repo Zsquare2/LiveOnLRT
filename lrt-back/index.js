@@ -13,6 +13,14 @@ const fetch = require('node-fetch')
 const cache = require('./models/cache')
 const moment = require('moment');
 
+const compare = (t1, t2) => {
+  if (t1 > t2)
+   return true
+  else {
+    return false
+  }
+} 
+
 
 
 app.get('/', (req, res) => {
@@ -20,13 +28,25 @@ app.get('/', (req, res) => {
 })
 
 app.get('/api/lrtgyvai', (request, response) =>{
+  console.log("cashe scrape", cache.get('lrt-scrape'))
+  console.log("cashe scrape end time", cache.get('show-ends-scrape'))
+  console.log("cashe json end time ", cache.get('show-ends'))
+
   if(!cache.get('lrt-scrape') || checkTime(cache.get('show-ends-scrape'))){
     scrapeData().then((liveContent) => {
+      let tempStartTime = cache.get('temp-start-time')
+      let lastStartTime = cache.get('show-start-scrape')
+      console.log("temp", tempStartTime)
+      console.log("last", lastStartTime)
+
+    if(!lastStartTime || (tempStartTime > lastStartTime)){
+
     console.log("fetching from, scrape")
     cache.set('lrt-scrape', liveContent[0].live_title)
     cache.set('lrt-scrape-last-update', Date())
     cache.set('show-ends-scrape', cache.get('show-ends'))
-    response.json({title: liveContent[0].live_title})
+    cache.set('show-stat-scrape', liveContent[0].live_start_time)
+    response.json({title: liveContent[0].live_title})}
   })} else {
     response.json({title: cache.get('lrt-scrape')})
   }
@@ -34,7 +54,8 @@ app.get('/api/lrtgyvai', (request, response) =>{
 
 app.get('/api/lrt', (request, response) => {
   const url = "https://www.lrt.lt/static/tvprog/tvprog.json"
-  
+  console.log("cash scrape", cache.get('lrt-json'))
+
   if(!cache.get('lrt-json') || checkTime(cache.get('show-ends')))
   {fetch(url)
     .then((response) => {
@@ -64,15 +85,17 @@ async function scrapeData() {
   lrtContent.live_start_time = $(".channel-program-item.is-playing .channel-program-item__time").text();
   lrtContent.live_title = live_title.trim();
   liveContent.push(lrtContent);
+  cache.set('temp-start-time', lrtContent.live_start_time)
+  console.log(liveContent)
 
   return liveContent
 
 }
 
 const checkTime = (time) => {
-  console.log('whats in the cache??', cache.get())
   const requestTime = new Date()
   const programEndTime = time
+  console.log(programEndTime)
   
   const formatedProgramEndTime = moment(programEndTime).format('YYYY/MM/DD/HH/mm/ss')
   
