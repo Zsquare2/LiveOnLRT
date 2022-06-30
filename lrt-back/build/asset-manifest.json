@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/static/css/main.4d377eb5.css",
+    "main.js": "/static/js/main.2d09122e.js",
+    "static/media/logo-tv-hd2.svg": "/static/media/logo-tv-hd2.1288f30e8155a359895d5fb0f523269a.svg",
+    "static/media/logo-tv-hd.svg": "/static/media/logo-tv-hd.a83399f807d07936585f7a3d8da7e095.svg",
+    "index.html": "/index.html",
+    "main.4d377eb5.css.map": "/static/css/main.4d377eb5.css.map",
+    "main.2d09122e.js.map": "/static/js/main.2d09122e.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.4d377eb5.css",
+    "static/js/main.2d09122e.js"
+  ]
+}

@@ -1,0 +1,41 @@
+.App {
+    text-align: center;
+  }
+  
+.text {
+    font-family: Source Sans Pro,sans-serif;
+    font-weight: 700;
+}
+.section-title {
+    font-family: Source Sans Pro,sans-serif;
+    color: #000;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 22px;
+    line-height: 24px;
+    letter-spacing: .25px;
+    color: currentColor;
+}
+.text-lead {
+    color: var(--text-lead-color,inherit);
+    font-size: 18px;
+    line-height: 32px;
+    letter-spacing: .83px;
+    font-weight: 400;
+}
+p {
+    margin-top: 0;
+    margin-bottom: 20px;
+    margin: auto;
+}
+.box {
+
+    display: inline-flex;
+    align-items:center;
+ }
+
+ .content p {
+    font-size: 20px;
+    line-height: 30px;
+    letter-spacing: .4px;
+}
