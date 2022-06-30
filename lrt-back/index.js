@@ -13,40 +13,34 @@ const fetch = require('node-fetch')
 const cache = require('./models/cache')
 const moment = require('moment');
 
-const compare = (t1, t2) => {
-  if (t1 > t2)
-   return true
-  else {
-    return false
-  }
-} 
-
-
 
 app.get('/', (req, res) => {
   res.send('<h1>Hello World!</h1>')
 })
+
 
 app.get('/api/lrtgyvai', (request, response) =>{
   console.log("cashe scrape", cache.get('lrt-scrape'))
   console.log("cashe scrape end time", cache.get('show-ends-scrape'))
   console.log("cashe json end time ", cache.get('show-ends'))
 
-  if(!cache.get('lrt-scrape') || checkTime(cache.get('show-ends-scrape'))){
+  if(!cache.get('lrt-scrape') || checkTime(cache.get('show-ends-scrape')))
+  
+  {
     scrapeData().then((liveContent) => {
       let tempStartTime = cache.get('temp-start-time')
       let lastStartTime = cache.get('show-start-scrape')
       console.log("temp", tempStartTime)
       console.log("last", lastStartTime)
 
-    if(!lastStartTime || (tempStartTime > lastStartTime)){
+      if(!lastStartTime || (tempStartTime > lastStartTime)){
 
-    console.log("fetching from, scrape")
-    cache.set('lrt-scrape', liveContent[0].live_title)
-    cache.set('lrt-scrape-last-update', Date())
-    cache.set('show-ends-scrape', cache.get('show-ends'))
-    cache.set('show-stat-scrape', liveContent[0].live_start_time)
-    response.json({title: liveContent[0].live_title})}
+        console.log("fetching from, scrape")
+        cache.set('lrt-scrape', liveContent[0].live_title)
+        cache.set('show-ends-scrape', cache.get('show-ends'))
+        cache.set('show-start-scrape', liveContent[0].live_start_time)
+        response.json({title: liveContent[0].live_title})
+      } else response.json({title: cache.get('lrt-scrape')})
   })} else {
     response.json({title: cache.get('lrt-scrape')})
   }
@@ -86,10 +80,9 @@ async function scrapeData() {
   lrtContent.live_title = live_title.trim();
   liveContent.push(lrtContent);
   cache.set('temp-start-time', lrtContent.live_start_time)
-  console.log(liveContent)
+  console.log("scrapeaData liveContent", liveContent)
 
   return liveContent
-
 }
 
 const checkTime = (time) => {
@@ -103,10 +96,10 @@ const checkTime = (time) => {
   
   const eTime = new Date(+year, +month - 1, +day, +hours, +minutes, +seconds);
 
-  console.log("rTIme", requestTime.getTime())
-  console.log("eTIme", eTime.getTime())
+  console.log("REQUEST TIME", requestTime.getTime())
+  console.log("END TIME", eTime.getTime())
   if(requestTime.getTime() > eTime.getTime()) {
-    console.log("rTime more thatn eTime")
+    console.log("REQUEST TIME more thatn ENDTIME")
     return true
   } 
   return false
