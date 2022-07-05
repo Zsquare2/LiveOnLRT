@@ -80,11 +80,8 @@ const checkTime = (time) => {
   
   const eTime = new Date(+year, +month - 1, +day, +hours, +minutes, +seconds);
 
-  if(requestTime > eTime) {
-    console.log("REQUEST TIME more thatn ENDTIME")
-    return true
-  } 
-  return false
+  return requestTime > eTime)
+
 }
 
 
@@ -99,7 +96,6 @@ const isRightData = async () =>{
     let endTime = moment(cache.get('show-ends-scrape'), 'YYYY-MM-DD hh:mm:ss')
         
     if((endTime <= startTime) && cache.get('show-ends')){
-        console.log("SETS NEW END TIME FOR SCRAPE")
         cache.set('show-ends-scrape', cache.get('show-ends'))}
 
     // if new end time is right returns
