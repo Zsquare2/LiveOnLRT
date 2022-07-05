@@ -6,76 +6,54 @@ app.use(express.static('build'))
 
 const axios = require("axios");
 const cheerio = require("cheerio");
-const fs = require("fs");
 const fetch = require('node-fetch')
 
 const cache = require('./models/cache')
 const moment = require('moment');
+
 cache.set('temp-start-time', '00:00')
+cache.set('show-ends-scrape', '2022-01-01 00:00')
+
 
 app.get('/', (req, res) => {
   res.send('<h1>Hello World!</h1>')
 })
 
 
-app.get('/api/lrtgyvai', (request, response) =>{  
+// Gets data by scraping
+app.get('/api/lrtgyvai', async (request, response) =>{
+
+  // if no data or time for getting new data is right
   if(!cache.get('lrt-scrape') || checkTime(cache.get('show-ends-scrape'))){
-    let delay = 1000
     
-    const interval = setInterval(()=>{
-      scrapeData().then((liveContent) => {
-        delay = delay + delay
-        console.log("SCRAPE trye again after ", delay)
-        console.log("fetching from, scrape")
-
-        cache.set('lrt-scrape', liveContent[0].live_title)
-        cache.set('show-ends-scrape', cache.get('show-ends'))
-        cache.set('show-start-scrape', liveContent[0].live_start_time)
-
-        if(!checkTime(cache.get('show-ends-scrape'))){
-          console.log("can return FROM SCRAPE")
-          clearInterval(interval)
-          response.json({title: cache.get('lrt-scrape')})
-        }
-      }) 
-   },delay)
-  }  else response.json({title: cache.get('lrt-json')})
+    // w8 for correct data
+    await isRightData()
+    response.json({title: cache.get('lrt-scrape')})
+  }
+    //retun cache data
+  else {
+    response.json({title: cache.get('lrt-json')})
+  }
 })
 
-app.get('/api/lrt', (request, response) => {
-  const url = "https://www.lrt.lt/static/tvprog/tvprog.json"
+
+// gets data from API 
+app.get('/api/lrt', async (request, response) => {
+
+  //if firs try of right time to update
   if(!cache.get('lrt-json') || checkTime(cache.get('show-ends'))) {
-    let delay = 1000
-    const interval = setInterval(()=>{
-      delay = delay + delay
+    
+    // w8 for correct data
+    await getDataFromUrl()
+    response.json({title: cache.get('lrt-json')})
+  }
 
-      console.log("tryes again after JSON", delay)
-
-      {fetch(url)
-        .then((response) => {
-
-          console.log("fetching from json")
-
-          return (response.json())
-          })
-        .then(data => {
-          const liveData = data
-          const liveTitle = liveData.tvprog.items[0].title
-          
-          console.log("end time from json", liveData.tvprog.items[0].stop )
-          cache.set('lrt-json', liveTitle)
-          cache.set('show-ends', liveData.tvprog.items[0].stop )
-          cache.set('lrt-json-last-update', Date())
-          
-          if(!checkTime(cache.get('show-ends'))){
-            console.log("can return JSON")
-            clearInterval(interval)
-            response.json({title: cache.get('lrt-json')})
-          }
-        })}
-    },delay)} else response.json({title: cache.get('lrt-json')})
+  // retuns cache data
+  else response.json({title: cache.get('lrt-json')})
 })
 
+
+// scraoes data
 async function scrapeData() {
   liveContent = []
   let response = await axios.get("https://www.lrt.lt/mediateka/tiesiogiai/lrt-televizija")
@@ -89,6 +67,8 @@ async function scrapeData() {
   return liveContent
 }
 
+
+// checks if its time for update
 const checkTime = (time) => {
   const requestTime = new Date()
   const programEndTime = time
@@ -100,13 +80,68 @@ const checkTime = (time) => {
   
   const eTime = new Date(+year, +month - 1, +day, +hours, +minutes, +seconds);
 
-  console.log("REQUEST TIME", requestTime.getTime())
-  console.log("END TIME", eTime.getTime())
   if(requestTime > eTime) {
     console.log("REQUEST TIME more thatn ENDTIME")
     return true
   } 
   return false
+}
+
+
+// checks if data is rigt for scrape
+const isRightData = async () =>{
+
+    const liveContent = await scrapeData()
+    cache.set('show-start-scrape', liveContent[0].live_start_time)
+    
+    // other way to compare date and time
+    const startTime = moment(cache.get('show-start-scrape'), 'hh:mm')
+    let endTime = moment(cache.get('show-ends-scrape'), 'YYYY-MM-DD hh:mm:ss')
+        
+    if((endTime <= startTime) && cache.get('show-ends')){
+        console.log("SETS NEW END TIME FOR SCRAPE")
+        cache.set('show-ends-scrape', cache.get('show-ends'))}
+
+    // if new end time is right returns
+    if(!checkTime(cache.get('show-ends-scrape'))){
+      cache.set('lrt-scrape', liveContent[0].live_title)
+      return new Promise(resolve => resolve())  
+    } 
+    
+    //else repeat recirsively
+    else {
+        await timeout(500)
+        await isRightData()
+    }
+}
+
+// get right data for "JSON" method
+const getDataFromUrl = async () => {
+  const url = "https://www.lrt.lt/static/tvprog/tvprog.json"
+
+  const response = await fetch(url)
+  const liveData =  await (response.json());
+  const liveTitle = liveData.tvprog.items[0].title
+    
+  cache.set('lrt-json', liveTitle)
+  cache.set('show-ends', liveData.tvprog.items[0].stop )
+    
+  // if new time is right return
+  if(!checkTime(cache.get('show-ends'))){
+      return new Promise(resolve => resolve())
+  } 
+
+  //else repeat recirsively
+  else {
+    await timeout(500)
+    await getDataFromUrl()
+  }
+}
+
+
+const timeout = (ms) => {
+  console.log("RUNS TIMOUT FOR", ms)
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 
